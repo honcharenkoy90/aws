@@ -19,17 +19,6 @@
         }
     },  
 	  
-	 "Mappings": {
-		"SubnetConfig" : {
-      		"AccessSubnetAZ1"     : { "CIDR" : "10.0.2.0/24", "AZ" : "us-east-1a" },
-      		"AccessSubnetAZ2"     : { "CIDR" : "10.0.1.0/24", "AZ" : "us-east-1c" }
-    		},
-        "Region2Examples": {
-            "us-east-1": {
-                "Examples": "https://s3.amazonaws.com/cloudformation-examples-us-east-1"
-            }
-       	} 
-},
 	  "Resources" : {
 
     "VPC" : {
@@ -37,8 +26,7 @@
       "Properties" : {
         "EnableDnsSupport" : "true",
         "EnableDnsHostnames" : "true",
-        "CidrBlock" : { "Fn::FindInMap" : [ "SubnetConfig", "AccessSubnetAZ1", "CIDR" ]},
-		"CidrBlock" : { "Fn::FindInMap" : [ "SubnetConfig", "AccessSubnetAZ2", "CIDR" ]},
+        "CidrBlock" : { "Fn::Sub" : "subnet-a36b439c, subnet-b966a4f3"},
         "Tags" : [
           { "Key" : "Application", "Value" : { "Ref" : "AWS::StackName" } },
           { "Key" : "Network", "Value" : "Public" }
@@ -49,9 +37,8 @@
     "PublicSubnet" : {
       "Type" : "AWS::EC2::Subnet",
       "Properties" : {
-        "VpcId" : { "Ref" : "VPC" },
-        "CidrBlock" : { "Fn::FindInMap" : [ "SubnetConfig", "AccessSubnetAZ1", "CIDR" ]},
-		"CidrBlock" : { "Fn::FindInMap" : [ "SubnetConfig", "AccessSubnetAZ2", "CIDR" ]},
+        "VpcId" :  "vpc-4f1f8934" ,
+		"CidrBlock" : { "Fn::Sub" : "subnet-a36b439c, subnet-b966a4f3"},
         "Tags" : [
           { "Key" : "Application", "Value" : { "Ref" : "AWS::StackName" } },
           { "Key" : "Network", "Value" : "Public" }
