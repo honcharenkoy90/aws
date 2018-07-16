@@ -18,7 +18,18 @@
             "ConstraintDescription": "must be a valid CIDR range of the form x.x.x.x/x."
         }
     },  
-	  
+	   "Mappings": {
+			"VPCConfig" : {
+      		"AccessVPC"     : { "CIDR" : "10.0.0.0/16", "AZ" : "us-east-1" } ,
+			"AccessSub1"   : { "CIDR" : "10.0.0.0/24", "AZ" : "us-east-1a" } ,
+			"AccessSub2"   : { "CIDR" : "10.0.1.0/24", "AZ" : "us-east-1b" } 
+		},
+        		"Region2Examples": {
+            "us-east-1": {
+                "Examples": "https://s3.amazonaws.com/cloudformation-examples-us-east-1"
+            }
+       	} 
+},
 	  "Resources" : {
 
     "VPC" : {
@@ -26,7 +37,7 @@
       "Properties" : {
         "EnableDnsSupport" : "true",
         "EnableDnsHostnames" : "true",
-        "CidrBlock" : { "Fn::Sub" : "subnet-a36b439c, subnet-b966a4f3"},
+        "CidrBlock" : { "Fn::FindInMap" : [ "VPCConfig", "AccessVPC", "CIDR" ]},
         "Tags" : [
           { "Key" : "Application", "Value" : { "Ref" : "AWS::StackName" } },
           { "Key" : "Network", "Value" : "Public" }
@@ -34,11 +45,25 @@
       }
     },
 
-    "PublicSubnet" : {
+    "PublicSub1" : {
       "Type" : "AWS::EC2::Subnet",
       "Properties" : {
-        "VpcId" :  "vpc-4f1f8934" ,
-		"CidrBlock" : { "Fn::Sub" : "subnet-a36b439c, subnet-b966a4f3"},
+		 "AvailabilityZone": "us-east-1a" ,
+        "VpcId" :  {"Ref": "VPC"} ,
+		"CidrBlock" :  { "Fn::FindInMap" : [ "VPCConfig", "AccessSub1", "CIDR" ]},
+        "Tags" : [
+          { "Key" : "Application", "Value" : { "Ref" : "AWS::StackName" } },
+          { "Key" : "Network", "Value" : "Public" }
+        ]
+      }
+    },
+	
+	"PublicSub2" : {
+      "Type" : "AWS::EC2::Subnet",
+      "Properties" : {
+		 "AvailabilityZone": "us-east-1b"  ,
+        "VpcId" :  {"Ref": "VPC"} ,
+		"CidrBlock" :  { "Fn::FindInMap" : [ "VPCConfig", "AccessSub2", "CIDR" ]},
         "Tags" : [
           { "Key" : "Application", "Value" : { "Ref" : "AWS::StackName" } },
           { "Key" : "Network", "Value" : "Public" }
@@ -88,7 +113,7 @@
     "PublicSubnetRouteTableAssociation" : {
       "Type" : "AWS::EC2::SubnetRouteTableAssociation",
       "Properties" : {
-        "SubnetId" : { "Ref" : "PublicSubnet" },
+        "SubnetId" : { "Ref" : "PublicSub1" },
         "RouteTableId" : { "Ref" : "PublicRouteTable" }
       }
     },
@@ -172,7 +197,7 @@
     "PublicSubnetNetworkAclAssociation" : {
       "Type" : "AWS::EC2::SubnetNetworkAclAssociation",
       "Properties" : {
-        "SubnetId" : { "Ref" : "PublicSubnet" },
+        "SubnetId" : { "Ref" : "PublicSub1" },
         "NetworkAclId" : { "Ref" : "PublicNetworkAcl" }
       }
     }
@@ -184,8 +209,8 @@
       "Value" :  { "Ref" : "VPC" }
     },
     "PublicSubnet" : {
-      "Description" : "SubnetId of the public subnet",
-      "Value" :  { "Ref" : "PublicSubnet" }
+      "Description" : "SubnetId of the main public subnet",
+      "Value" :  { "Ref" : "PublicSub1"}
     }
   }
 }
