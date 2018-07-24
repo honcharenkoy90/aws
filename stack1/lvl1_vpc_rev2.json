@@ -1,6 +1,6 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "My Sample Template VPCr: Create a Virtual Private Cloud (VPC).",
+    "Description": "My Sample Template VPC: Creation a Virtual Private Cloud (VPC).",
     "Parameters": {
         "KeyName": {
             "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
@@ -206,13 +206,26 @@
   "Outputs" : {
     "VPCId" : {
       "Description" : "VPCId of the newly created VPC",
-      "Value" :  { "Ref" : "VPC" }
-    },
-    "PublicSubnet" : {
+      "Value" :  { "Ref" : "VPC" },
+	  "Export" : {
+      	"Name" : {"Fn::Sub": "${AWS::StackName}-VPCId" }
+    }
+},
+    "PublicSubnet1" : {
       "Description" : "SubnetId of the main public subnet",
-      "Value" :  { "Ref" : "PublicSub1"}
+      "Value" :  { "Ref" : "PublicSub1"},
+	  "Export" : {
+      	"Name" : {"Fn::Sub": "${AWS::StackName}-PublicSub1" }
+    }
+  },
+	"PublicSubnet2" : {
+      "Description" : "SubnetId of the second public subnet",
+      "Value" :  { "Ref" : "PublicSub2"},
+	  "Export" : {
+      	"Name" : {"Fn::Sub": "${AWS::StackName}-PublicSub2" }
     }
   }
+}
 }
 
 
