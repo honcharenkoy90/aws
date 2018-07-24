@@ -100,23 +100,65 @@
        			 "Comment" : "Install a simple application",
         			 "AWS::CloudFormation::Init" : {
           			"config" : {
-            				"packages" : {
-              				"yum" : {
-                					"httpd" : []
-              }
-            },
-
             				"files" : {
-              				"/var/www/html/index.html" : {
-                					"content" : { "Fn::Join" : ["\n", [
-                  					"<img src=\"", {"Fn::FindInMap" : ["Region2Examples", {"Ref" : "AWS::Region"}, "Examples"]}, "/cloudformation_graphic.png\" alt=\"AWS CloudFormation Logo\"/>",
-                  					"<h1>Congratulations, you have successfully launched the AWS CloudFormation sample11111111111111.</h1>"
+              				"/etc/nginx/sites-enabled/letsencrypt.conf" : {
+                "content" : { "Fn::Join" : ["", [
+                  "server {\n",
+                  "\tlisten 80;\n",
+                  "\tlisten 443 ssl;\n",
+                  "\tserver_name ", {"Fn::Join": ["",["http://", {"Fn::GetAtt": ["ApplicationLoadBalancer","DNSName" ]
+                        }
+                    ]
+                ]}, ";\n",
+                  "\tssl_certificate /etc/letsencrypt/live/", {"Fn::Join": ["",["http://", {"Fn::GetAtt": ["ApplicationLoadBalancer","DNSName" ]
+                        }
+                    ]
+                ]}, "/fullchain.pem;\n",
+                  "\tssl_certificate_key /etc/letsencrypt/live/", {"Fn::Join": ["",["http://", {"Fn::GetAtt": ["ApplicationLoadBalancer","DNSName" ]
+                        }
+                    ]
+                ]}, "/privkey.pem;\n",
+                  "\troot /usr/share/nginx/html;\n",
+                  "\tindex index.html index.htm;\n",
+                  "}\n"
                 ]]},
-                "mode"    : "000644",
+                "mode"  : "000644",
+                "owner" : "root",
+                "group" : "root"
+              },
+              "/usr/share/nginx/html/index.html" : {
+                "content" : { "Fn::Join" : ["", [
+                  "<!DOCTYPE html>\n",
+                  "<html><head>\n",
+                  "<title>Welcome to nginx!</title>\n",
+                  "<style> body { width: 800px; margin: 0 auto; } </style>\n",
+                  "</head>\n",
+                  "<body>\n",
+                  "<h1>Let's Encrypt</h1>\n",
+                  "<h2>Let's Encrypt</h2>\n",
+				  "<h3>Let's Encrypt</h3>\n",
+                  "</body></html>"
+                ]]},
+                "mode"  : "000644",
+                "owner" : "root",
+                "group" : "root"
+              },
+			  
+				"/etc/letsencrypt/configs/example.com.conf":{
+					"content" : { "Fn::Join" : ["", [
+						"domains","=", {"Fn::Join": ["",["http://", {"Fn::GetAtt": ["ApplicationLoadBalancer","DNSName" ]
+                        }
+                    ]
+                ]}, ";\n",
+					"rsa-key-size = 4096\n",
+					"server = https://acme-v01.api.letsencrypt.org/directory\n",
+					"email = honcharenkoy90@gmail.com\n", 
+					"text = True"
+				  ]]},
+				 "mode"    : "000400",
                 "owner"   : "root",
                 "group"   : "root"
               },
-
              				 "/etc/cfn/cfn-hup.conf" : {
                 					"content" : { "Fn::Join" : ["", [
                   					"[main]\n",
@@ -147,7 +189,8 @@
 
             			"services" : {
               			"sysvinit" : {
-               				 "httpd"    : { "enabled" : "true", "ensureRunning" : "true" },
+               				 "nginx"    : { "enabled" : "true", "ensureRunning" : "true", 
+													"files" : [ "/etc/nginx/sites-enabled/letsencrypt.conf" ]},
                				 "cfn-hup" : { "enabled" : "true", "ensureRunning" : "true",
                               						"files" : ["/etc/cfn/cfn-hup.conf", "/etc/cfn/hooks.d/cfn-auto-reloader.conf"]}
               }
@@ -172,8 +215,14 @@
                                           "Arch" ] } ] },
         "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
              "#!/bin/bash -xe\n",
-             "yum update -y aws-cfn-bootstrap\n",
-
+             "sudo yum update -y aws-cfn-bootstrap\n",
+			"sudo yum install -y nginx\n",
+			"sudo rm /etc/nginx/sites-enabled/default\n",
+			"sudo service nginx stop\n",
+			"sudo wget https://dl.eff.org/certbot-auto\n",
+			"sudo chmod a+x certbot-auto\n",
+			"sudo ./certbot-auto --standalone --config /etc/letsencrypt/configs/example.com.conf certonly\n",
+			"sudo service nginx reload\n",
              "/opt/aws/bin/cfn-init -v ",
              "         --stack ", { "Ref" : "AWS::StackName" },
              "         --resource LaunchConfig",
@@ -206,6 +255,12 @@
           		"IpProtocol" : "tcp",
           		"FromPort" : "80",
           		"ToPort" : "80",
+          		"CidrIp" : "0.0.0.0/0"
+        } ,
+		{
+          		"IpProtocol" : "tcp",
+          		"FromPort" : "443",
+          		"ToPort" : "443",
           		"CidrIp" : "0.0.0.0/0"
         } ],
 				"SecurityGroupEgress" : [ {
