@@ -100,6 +100,11 @@
        			 "Comment" : "Install a simple application",
         			 "AWS::CloudFormation::Init" : {
           			"config" : {
+						"packages" : {
+              				"yum" : {
+                					"nginx" : []
+              }
+            },
             				"files" : {
               				"/etc/nginx/sites-enabled/letsencrypt.conf" : {
                 "content" : { "Fn::Join" : ["", [
@@ -215,23 +220,22 @@
                                           "Arch" ] } ] },
         "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
              "#!/bin/bash -xe\n",
-             "sudo yum update -y aws-cfn-bootstrap\n",
-			"sudo yum install -y nginx\n",
-			"sudo rm /etc/nginx/sites-enabled/default\n",
-			"sudo service nginx stop\n",
-			"sudo wget https://dl.eff.org/certbot-auto\n",
-			"sudo chmod a+x certbot-auto\n",
-			"sudo ./certbot-auto --standalone --config /etc/letsencrypt/configs/example.com.conf certonly\n",
-			"sudo service nginx reload\n",
-             "/opt/aws/bin/cfn-init -v ",
+             "yum update -y aws-cfn-bootstrap\n",
+			 "/opt/aws/bin/cfn-init -v ",
              "         --stack ", { "Ref" : "AWS::StackName" },
              "         --resource LaunchConfig",
              "         --region ", { "Ref" : "AWS::Region" }, "\n",
-
              "/opt/aws/bin/cfn-signal -e $? ",
              "         --stack ", { "Ref" : "AWS::StackName" },
              "         --resource LaunchConfig",
-             "         --region ", { "Ref" : "AWS::Region" }, "\n"
+             "         --region ", { "Ref" : "AWS::Region" }, "\n",
+			"yum install -y nginx\n",
+			"rm /etc/nginx/sites-enabled/default\n",
+			"service nginx stop\n",
+			"wget https://dl.eff.org/certbot-auto\n",
+			"chmod a+x certbot-auto\n",
+			"./certbot-auto --standalone --config /etc/letsencrypt/configs/example.com.conf certonly\n",
+			"service nginx reload\n"
         ]]}}
       },
       "CreationPolicy" : {
