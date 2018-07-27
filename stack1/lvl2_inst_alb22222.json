@@ -41,7 +41,7 @@
             }
           },
  		"AWSRegionArch2AMI" : {
-     			"us-east-1"        : {"PV64" : "ami-2a69aa47", "HVM64" : "ami-97785bed", "HVMG2" : "ami-0a6e3770"}
+     			"us-east-1"        : {"HVM64" : "ami-759bc50a"}
     }
     },
     "Resources": {
@@ -100,13 +100,8 @@
        			 "Comment" : "Install a simple application",
         			 "AWS::CloudFormation::Init" : {
           			"config" : {
-						"packages" : {
-             				 "yum" : {
-               					 "nginx"        : [] 
-              }
-            },
             				"files" : {
-              				"/temp/nginx/default.conf" : {
+              				"/etc/nginx/conf.d/letsencrypt.conf" : {
                				 "content" : { "Fn::Join" : ["", [
                  			"server {\n",
                  			"\tlisten 80;\n",
@@ -131,7 +126,7 @@
                 			"owner" : "root",
                 			"group" : "root"
               			},
-              			"/usr/share/nginx/index.html" : {
+              			"/var/www/html/index.html" : {
                 			"content" : { "Fn::Join" : ["", [
                   				"<!DOCTYPE html>\n",
                   				"<html><head>\n",
@@ -149,7 +144,7 @@
                 "group" : "root"
               },
 			  
-				"/temp/lts/example.conf":{
+				"/etc/letsencrypt/example.com.conf":{
 					"content" : { "Fn::Join" : ["", [
 						"domains","=", {"Fn::Join": ["",["http://", {"Fn::GetAtt": ["ApplicationLoadBalancer","DNSName" ]
                         }
@@ -164,16 +159,19 @@
                 "owner"   : "root",
                 "group"   : "root"
               }
-             			
-              
+ 
             },
-					"services" : {
-              			"sysvinit" : {
-               				 "nginx"    : { "enabled" : "true", "ensureRunning" : "true", 
-													"files" : [ "/etc/nginx/conf.d/letsencrypt.conf" ]}
-               				 
+							"services" : {
+              					"sysvinit" : {
+               				 		"nginx"    : { "enabled" : "true", "ensureRunning" : "true", 
+													"files" : [ "/etc/nginx/conf.d/letsencrypt.conf" ]},
+									"letsencrypt": {"enabled" : "true", "ensureRunning" : "true", 
+													"files" : [ "/etc/letsencrypt/configs/example.com.conf" ]}
+									
               }
-            }          	
+            }
+
+            	
           }
         }
       },
@@ -194,20 +192,19 @@
                                           "Arch" ] } ] },
         "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
              "#!/bin/bash -xe\n",
-			"yum -y update\n",
-			 "yum install -y nginx\n",
-			"cp /temp/nginx/default.conf /etc/nginx/conf.d/default.conf\n",
+			"apt-get install -y nginx\n",
 			"service nginx stop\n",
-			"wget https://dl.eff.org/certbot-auto\n",
-			"chmod a+x certbot-auto\n",
-			"cp /temp/lts/example.conf /etc/letsencrypt/configs/example.conf",
-			"./certbot-auto --no-bootstrap  --config /etc/letsencrypt/configs/example.conf certonly\n",
-			"service nginx reload\n"
+			"apt-get install -y python\n",
+			"add-apt-repository ppa:certbot/certbot\n",
+			"apt-get -y update\n",
+			"apt-get install -y python-certbot-nginx\n",
+			"certbot  --config /etc/letsencrypt/example.com.conf certonly\n",
+			"service nginx restart\n"
         ]]}}
       },
       "CreationPolicy" : {
         "ResourceSignal" : {
-          "Timeout" : "PT15M"
+          "Timeout" : "PT10M"
         }
       }
     },
@@ -245,13 +242,13 @@
           		"FromPort" : "80",
           		"ToPort" : "80",
           		"CidrIp" : "0.0.0.0/0"
-        },
-		{
+        } ,
+				 {
           		"IpProtocol" : "tcp",
           		"FromPort" : "443",
           		"ToPort" : "443",
           		"CidrIp" : "0.0.0.0/0"
-        }],
+        } ],
        		 "VpcId": {
                      "Fn::ImportValue" :{"Fn::Sub": "demoVPC-VPCId" }
 				}
