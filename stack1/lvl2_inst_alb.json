@@ -110,19 +110,7 @@
                				 "content" : { "Fn::Join" : ["", [
                  			"server {\n",
                  			"\tlisten 80;\n",
-                  			"\tlisten 443 ssl;\n",
-                  			"\tserver_name ", {"Fn::Join": ["",[ {"Fn::GetAtt": ["ApplicationLoadBalancer","DNSName" ]
-                        			}
-                    			]
-               			 ]}, ";\n",
-                  			"\tssl_certificate /etc/letsencrypt/live/", {"Fn::Join": ["",[ {"Fn::GetAtt": ["ApplicationLoadBalancer","DNSName" ]
-                        			}
-                    			]
-               			 ]}, "/fullchain.pem;\n",
-                  			"\tssl_certificate_key /etc/letsencrypt/live/", {"Fn::Join": ["",[ {"Fn::GetAtt": ["ApplicationLoadBalancer","DNSName" ]
-                       	 	 }
-                    			]
-               			 ]}, "/privkey.pem;\n",
+                  			"\tserver_name ", "localhost", ";\n",
                   			"\troot /usr/share/nginx/html;\n",
                   			"\tindex index.html index.htm;\n",
                   			"}\n"
@@ -147,22 +135,6 @@
                 "mode"  : "000644",
                 "owner" : "root",
                 "group" : "root"
-              },
-			  
-				"/temp/lts/example.conf":{
-					"content" : { "Fn::Join" : ["", [
-						"domains","=", {"Fn::Join": ["",[ {"Fn::GetAtt": ["ApplicationLoadBalancer","DNSName" ]
-                        }
-                    ]
-                ]}, ";\n",
-					"rsa-key-size = 4096\n",
-					"server = https://acme-v01.api.letsencrypt.org/directory\n",
-					"email = honcharenkoy90@gmail.com\n", 
-					"text = True"
-				  ]]},
-				 "mode"    : "000400",
-                "owner"   : "root",
-                "group"   : "root"
               },
 				 "/etc/cfn/cfn-hup.conf": {
                                 "content": {
@@ -279,21 +251,12 @@
 			 					"yum install -y nginx\n",
 								"cp /temp/nginx/default.conf /etc/nginx/conf.d/default.conf\n",
 								"service nginx stop\n",
-								"wget https://dl.eff.org/certbot-auto\n",
-								"chmod a+x certbot-auto\n",
-								"mkdir /etc/letsencrypt/configs/",
-								"cp /temp/lts/example.conf /etc/letsencrypt/configs/\n",
-								"mkdir /etc/letsencrypt/live/",{"Fn::Join": ["",[ {"Fn::GetAtt": ["ApplicationLoadBalancer","DNSName" ]
-                        			}
-                    			]
-               			 ]},"\n",
-								"./certbot-auto --no-bootstrap  --config /etc/letsencrypt/configs/example.conf certonly\n",
 								"service nginx reload\n"
         ]]}}
       },
       "CreationPolicy" : {
         "ResourceSignal" : {
-          "Timeout" : "PT15M"
+          "Timeout" : "PT10M"
         }
       }
     },
